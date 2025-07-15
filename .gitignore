@@ -124,3 +124,8 @@ target/
 
 # NPM
 node_modules/
+# SpecStory explanation file
+.specstory/.what-is-this.md
+.specstory/
+.cursor/
+.cursorindexingignore

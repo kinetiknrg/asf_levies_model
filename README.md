@@ -1,42 +1,16 @@
-# Energy Bills and Levies Model
+# NESTA Rebalancing Project Extension
 
 ## Description
 
-Model of domestic energy bills and levies to test the impacts of changing different components of domestic energy bills, project these changes into the future, and investigate how impacts of changes vary across different household archetypes via distributional analysis.
+NESTA's description of the original project:
+https://medium.com/data-analytics-at-nesta/a-model-for-experimenting-with-energy-bills-rebalancing-levies-with-python-and-streamlit-08182638e8fc
+Go to the source for the original readme.md with installation instructions.
 
-## Setup for Development
-
-If you want to develop code in this repo, enhancing what we already have or adding your own components, you should clone the existing repo dev branch.
-
-First, if you're using linux or mac os it'll be useful for you to install [`direnv`](https://direnv.net/).
-
-Secondly, we've used [`conda`](https://docs.anaconda.com/miniconda/).
-
-If you're also on a unix-like os and you are using conda, run `make install` to configure the development environment:
-
-- Setup the conda environment
-- Configure `pre-commit`
-
-### Windows
-If you're on Windows you can get set-up without conda by:
-
- - Cloning the repo
- - Creating a virtual environment
- - Installing the packages in requirements_dev.txt
- - Installing the packages in requirements.txt
-
-This setup uses only necessary runtime dependencies (no dev tools or doc generators).
-If you want to lint or document, install optional dev tools separately (e.g., `black`, `flake8`, `sphinx`).
-
-## Setup for Use
-
-If you just want to use the package as is, you can install from github using a command like:
-
-`pip install git+https://github.com/nestauk/asf_levies_model.git`
+This clone is for exploring running costs for gas boilers versus heat pumps for the different Ofgem archetypes.
 
 ## The config file
 
-If you cloned the repo for development, you should find there is a config file at: ./asf_levies_model/config/base.yaml.
+As I cloned the repo for development, there is a config file at: ./asf_levies_model/config/base.yaml.
 
 If you installed `asf_levies_model`, the config file will be wherever the package was installed on your computer, most likely the python 'site-packages' directory for the environment you're working in. To find where this is, you can run `python -m site` in the command line, this will print `sys.path` locations which should include `site-packages`. Should you need to change the `base.yaml` config file you can access it there.
 

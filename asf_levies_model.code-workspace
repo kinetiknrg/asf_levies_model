@@ -1,11 +1,12 @@
 {
 	"folders": [
 		{
-			"path": "."
+			"uri": "vscode-remote://wsl+ubuntu/mnt/c/Users/user/.websites/nesta/asf_levies_model"
 		},
 		{
-			"path": "../asf_levies_model_app"
+			"uri": "vscode-remote://wsl+ubuntu/mnt/c/Users/user/.websites/nesta/asf_levies_model_app"
 		}
 	],
+	"remoteAuthority": "wsl+ubuntu",
 	"settings": {}
 }

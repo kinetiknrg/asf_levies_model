@@ -26,6 +26,7 @@ setup(
         "PyYAML",
         "pandera",
         "python-dateutil",
+        "python-calamine",
     ],
     packages=find_packages(exclude=["docs"]),
     version="0.1.0",

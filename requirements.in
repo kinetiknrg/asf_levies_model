@@ -6,3 +6,4 @@ requests
 PyYAML
 pandera
 python-dateutil
+python-calamine

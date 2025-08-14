@@ -17,8 +17,16 @@ BASE_DIR = Path(__file__).parent
 setup(
     name="asf_levies_model",
     long_description=open(BASE_DIR / "README.md").read(),
-    install_requires=read_lines(BASE_DIR / "requirements.txt"),
-    extras_require={"dev": read_lines(BASE_DIR / "requirements_dev.txt")},
+    install_requires=[
+        "pandas",
+        "numpy",
+        "scipy",
+        "matplotlib",
+        "requests",
+        "PyYAML",
+        "pandera",
+        "python-dateutil",
+    ],
     packages=find_packages(exclude=["docs"]),
     version="0.1.0",
     description="Analytical model of domestic energy bills and levies.",

@@ -1,6 +1,28 @@
+# updated 28/08/2025 16:45
+# updated 21/08/2025 12:00
+
+# This is the base configuration file for the ASF Levies Model.
+# It is used to configure the model and its inputs.
+
+# Source URL:
+# https://www.ofgem.gov.uk/energy-regulation/domestic-and-non-domestic/energy-pricing-rules/energy-price-cap/energy-price-cap-default-tariff-levels
+
+# confirm links below are latest versions before running the model
+
 data_sources:
-  ofgem_annex_4: "https://www.ofgem.gov.uk/sites/default/files/2025-02/Annex-4-Policy-cost-allowance-methodology-v1.20.xlsx"
-  ofgem_annex_9: "https://www.ofgem.gov.uk/sites/default/files/2025-05/Final%20levelised%20cap%20rates%20model%20%28Annex%209%29%201%20July%20to%2030%20September%202025_0.xlsx"
+
+  ofgem_annex_4: "https://www.ofgem.gov.uk/sites/default/files/2025-08/policy-cost-allowance-methodology-annex-4.xlsx"
+  
+# https://www.ofgem.gov.uk/sites/default/files/2025-02/Annex-4-Policy-cost-allowance-methodology-v1.20.xlsx
+# https://www.ofgem.gov.uk/sites/default/files/2024-08/Annex_4_-_Policy_cost_allowance_methodology_v1.19%20%281%29.xlsx
+# https://www.ofgem.gov.uk/sites/default/files/2024-03/Annex_4_-_Policy_cost_allowance_methodology_v1.18.xlsx
+
+
+  ofgem_annex_9: "https://www.ofgem.gov.uk/sites/default/files/2025-08/levelisation-allowance-methodology-and-levelised-cap-levels-annex-9.xlsx"
+  
+# https://www.ofgem.gov.uk/sites/default/files/2025-05/Final%20levelised%20cap%20rates%20model%20%28Annex%209%29%201%20July%20to%2030%20September%202025_0.xlsx
+# https://www.ofgem.gov.uk/sites/default/files/2025-02/Annex-9-Levelisation-allowance-methodology-and-levelised-cap-levels-v1.5.xlsx
+# https://www.ofgem.gov.uk/sites/default/files/2024-11/Annex_9_-_Levelisation_allowance_methodology_and_levelised_cap_levels_v1.4.xlsx
 
 data_downloads:
   annex: "PROJECT_DIR/inputs/data/raw/"

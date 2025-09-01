@@ -1,0 +1,116 @@
+/mnt/c/Users/user/.websites/nesta/asf_levies_model/asf_levies_model/notebooks/llms/complete_data_pipeline_trace.py:58: PerformanceWarning: indexing past lexsort depth may impact performance.
+  nil_latest = elec_other_nil.loc[latest_period]
+/mnt/c/Users/user/.websites/nesta/asf_levies_model/asf_levies_model/notebooks/llms/complete_data_pipeline_trace.py:59: PerformanceWarning: indexing past lexsort depth may impact performance.
+  typical_latest = elec_other_typical.loc[latest_period]
+📊 COMPLETE DATA PIPELINE TRACE: SOURCE TO VAT-INCLUSIVE RATES
+======================================================================
+Execution time: 2025-08-28 23:42:21
+
+🔧 CONFIGURATION:
+VAT Rate: 5% (multiplier: 1.05)
+Focus: Electricity, Other Payment Method, Single-rate
+Target Period: Latest available (will be Oct-Dec 2025)
+
+======================================================================
+STEP 1: DOWNLOAD SOURCE DATA
+======================================================================
+
+📥 Downloading Ofgem Annexes...
+✅ Annex 9 downloaded (tariff components)
+✅ Annex 4 downloaded (levy costs)
+
+======================================================================
+STEP 2: EXTRACT RAW TARIFF DATA FROM ANNEX 9
+======================================================================
+
+📋 Processing Tab '1c Consumption adjusted levels'...
+
+Extracted data shapes:
+- Nil consumption data: (360, 2)
+- Typical consumption data: (360, 2)
+
+Latest period: [2025-10-01 00:00:00, 2025-12-31 23:59:59]
+
+📊 RAW VALUES (Tab 1c, Ex-VAT):
+Nil consumption annual bill: £186.60
+Typical consumption annual bill: £864.16
+Typical consumption level: 2.7 MWh (2,700 kWh)
+
+======================================================================
+STEP 3: EXTRACT LEVY DATA FROM ANNEX 4
+======================================================================
+
+📋 Loading levy costs...
+Number of entries: 49
+✅ ECO levy data loaded
+Number of entries: 49
+✅ WHD levy data loaded
+Number of entries: 49
+✅ GGL levy data loaded
+Number of entries: 49
+✅ AAHEDC levy data loaded
+✅ FIT levy data loaded
+Number of entries: 49
+✅ RO levy data loaded
+Number of entries: 49
+✅ NCC levy data loaded
+
+======================================================================
+STEP 4: CREATE TARIFF OBJECTS
+======================================================================
+
+🏗️ Creating ElectricityOtherPayment tariff object...
+
+📊 TARIFF COMPONENTS (Ex-VAT):
+Standing charge components (£/year):
+  Direct fuel (DF): £nan
+  Capacity market (CM): £nan
+  Policy costs (PC): £19.51
+  Network costs (NC): £95.20
+  Operating costs (OC): £nan
+  TOTAL NIL: £186.60
+
+Unit rate components (£/MWh):
+  Direct fuel (DF): £112.16
+  Capacity market (CM): £8.76
+  Policy costs (PC): £50.58
+  Network costs (NC): £43.83
+  Operating costs (OC): £0.00
+
+======================================================================
+STEP 5: CALCULATE RATES (EX-VAT)
+======================================================================
+
+📐 Standing Charge Calculation:
+Annual nil consumption: £186.60
+Daily rate: £186.60 ÷ 365 × 100 = 51.12p/day
+
+📐 Unit Rate Calculation:
+Typical annual bill (2.7 MWh): £864.16
+Annual consumption cost: £864.16 - £186.60 = £677.57
+Unit rate: £677.57 ÷ 2.7 MWh = £250.95/MWh
+Unit rate: £250.95 ÷ 10 = 25.10p/kWh
+
+======================================================================
+STEP 6: APPLY VAT (5%)
+======================================================================
+
+💷 VAT Application:
+Standing charge: 51.12p × 1.05 = 53.68p/day (inc VAT)
+Unit rate: 25.10p × 1.05 = 26.35p/kWh (inc VAT)
+
+======================================================================
+STEP 7: CREATE LEVY COLLECTION
+======================================================================
+
+🏗️ Creating individual levy objects...
+Traceback (most recent call last):
+  File "/mnt/c/Users/user/.websites/nesta/asf_levies_model/asf_levies_model/notebooks/llms/complete_data_pipeline_trace.py", line 202, in <module>
+    pc = pc.rebalance_to_denominators()
+  File "/mnt/c/Users/user/.websites/nesta/asf_levies_model/asf_levies_model/levies.py", line 2297, in rebalance_to_denominators
+    return self.rebalance_levies(
+  File "/mnt/c/Users/user/.websites/nesta/asf_levies_model/asf_levies_model/levies.py", line 2652, in rebalance_levies
+    rebalanced_levies = [
+  File "/mnt/c/Users/user/.websites/nesta/asf_levies_model/asf_levies_model/levies.py", line 2653, in <listcomp>
+    levy.rebalance_levy(
+TypeError: Levy.rebalance_levy() got an unexpected keyword argument 'denominator_elec'

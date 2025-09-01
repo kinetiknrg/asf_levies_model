@@ -129,3 +129,5 @@ node_modules/
 .specstory/
 .cursor/
 .cursorindexingignore
+
+/docs

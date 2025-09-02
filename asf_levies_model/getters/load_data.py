@@ -9,6 +9,7 @@ import os
 
 from io import BytesIO
 from os import listdir
+from pathlib import Path
 from requests.sessions import Session
 from requests import RequestException
 from typing import List, Optional, Union, Dict
@@ -181,6 +182,7 @@ Functions for getting and processing Annex 4 data
 """
 
 
+
 def download_annex_4(
     url: str = config.get("data_sources").get("ofgem_annex_4"),
     as_fileobject: bool = False,
@@ -196,25 +198,7 @@ def download_annex_4(
     Returns:
         Optionally, None or BytesIO fileobject.
     """
-    # Check if we should use cached file (only when as_fileobject=False)
-    if not as_fileobject:
-        try:
-            latest_cached = _find_latest_annex(DATA_ROOT, 4)
-            if latest_cached:
-                # Check config file modification time vs cached file date
-                config_path = Path(__file__).parent.parent / "config" / "base.yaml"
-                if config_path.exists():
-                    import os
-                    config_mtime = datetime.datetime.fromtimestamp(os.path.getmtime(config_path))
-                    cached_date = datetime.datetime.strptime(latest_cached, "%Y%m%d")
-                    
-                    if cached_date >= config_mtime and not force_download:
-                        print(f"Using cached Annex 4 from {latest_cached} (newer than config update)")
-                        return None  # Signal to use cached file
-                    else:
-                        print(f"Config updated {config_mtime.strftime('%Y-%m-%d')}, cached file {latest_cached} is stale, attempting fresh download")
-        except:
-            pass  # Continue with download attempt
+
 
     with Session() as session:
         try:
@@ -227,16 +211,22 @@ def download_annex_4(
                 return BytesIO(response.content)
             print("File retrieved successfully.")
         except RequestException as rex:
-            print("Failed to download annex 4", rex)
-            # Try to use cached file as fallback
-            if not as_fileobject:
-                try:
-                    latest_cached = _find_latest_annex(DATA_ROOT, 4)
-                    if latest_cached:
-                        print(f"Using cached fallback: {latest_cached}")
-                        return None
-                except:
-                    pass
+            # For production (as_fileobject=True): fail fast, no fallback
+            if as_fileobject:
+                print(f"Download failed in production mode: {rex}")
+                return None
+
+            # For development (as_fileobject=False): warn and use cache
+            print(f"Download failed: {rex}")
+            try:
+                latest_cached = _find_latest_annex(DATA_ROOT, 4)
+                if latest_cached:
+                    print(f"⚠️  WARNING: Using stale cached file {latest_cached}")
+                    print(f"⚠️  Policy analysis may be based on outdated data!")
+                    return None
+            except:
+                pass
+            print("❌ No cached files available")
             return None
 
 
@@ -246,11 +236,14 @@ def _find_latest_annex(data_root: str, annex_to_find: int) -> str:
         f.split("_")[0]
         for f in listdir(data_root)
         if f"ofgem_annex_{annex_to_find}" in f
+        and not f.startswith("~$")  # Exclude Excel temp files
+        and f.endswith(".xlsx")     # Only include Excel files
     ]
     if len(available_dates) > 0:
         return sorted(available_dates, reverse=True)[0]
     else:
         raise FileNotFoundError(f"No local copies of Annex {annex_to_find} available.")
+
 
 
 def _get_excel_sheet_names(file_path: Union[str, BytesIO]) -> list:
@@ -667,7 +660,29 @@ def _get_raw_dataframe_annex9(
     spreadsheet tab corresponding to policy of interest."""
     if not fileobject:
         date = datetime.datetime.now()
-        latest_annex_9 = _find_latest_annex(DATA_ROOT, 9)
+
+        # Check if cached file is newer than config updates
+        try:
+            latest_annex_9 = _find_latest_annex(DATA_ROOT, 9)
+            config_path = Path(__file__).parent.parent / "config" / "base.yaml"
+
+            if config_path.exists():
+                config_mtime = datetime.datetime.fromtimestamp(os.path.getmtime(config_path))
+                cached_date = datetime.datetime.strptime(latest_annex_9, "%Y%m%d")
+
+                # If config is newer than cached file, force fresh download
+                if config_mtime > cached_date:
+                    print(f"Config updated {config_mtime.strftime('%Y-%m-%d')}, cached file {latest_annex_9} is stale")
+                    print("Downloading fresh Annex 9 data...")
+                    fresh_fileobj = download_annex_9(as_fileobject=True)
+                    if fresh_fileobj:
+                        return _get_raw_dataframe_annex9(data_name, fresh_fileobj)
+                    else:
+                        print("Fresh download failed, using cached file as fallback")
+        except:
+            pass  # Continue with cached file usage
+
+        # Use cached file
         if (
             day_diff := (
                 date - datetime.datetime.strptime(latest_annex_9, "%Y%m%d")

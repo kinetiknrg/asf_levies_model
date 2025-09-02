@@ -661,28 +661,8 @@ def _get_raw_dataframe_annex9(
     if not fileobject:
         date = datetime.datetime.now()
 
-        # Check if cached file is newer than config updates
-        try:
-            latest_annex_9 = _find_latest_annex(DATA_ROOT, 9)
-            config_path = Path(__file__).parent.parent / "config" / "base.yaml"
-
-            if config_path.exists():
-                config_mtime = datetime.datetime.fromtimestamp(os.path.getmtime(config_path))
-                cached_date = datetime.datetime.strptime(latest_annex_9, "%Y%m%d")
-
-                # If config is newer than cached file, force fresh download
-                if config_mtime > cached_date:
-                    print(f"Config updated {config_mtime.strftime('%Y-%m-%d')}, cached file {latest_annex_9} is stale")
-                    print("Downloading fresh Annex 9 data...")
-                    fresh_fileobj = download_annex_9(as_fileobject=True)
-                    if fresh_fileobj:
-                        return _get_raw_dataframe_annex9(data_name, fresh_fileobj)
-                    else:
-                        print("Fresh download failed, using cached file as fallback")
-        except:
-            pass  # Continue with cached file usage
-
         # Use cached file
+        latest_annex_9 = _find_latest_annex(DATA_ROOT, 9)
         if (
             day_diff := (
                 date - datetime.datetime.strptime(latest_annex_9, "%Y%m%d")

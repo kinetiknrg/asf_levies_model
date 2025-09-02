@@ -262,10 +262,12 @@ def _get_raw_dataframe_annex4(
             warnings.warn(f"Using copy of Annex 4 downloaded {day_diff} days ago.")
         filepath = f"{DATA_ROOT}{latest_annex_4}_ofgem_annex_4.xlsx"
         try:
+            # Handle special case for NCC sheet name
+            search_name = "3k NCC" if policy_name == "NCC" else policy_name
             sheet = [
                 sheet_name
                 for sheet_name in _get_excel_sheet_names(filepath)
-                if policy_name in sheet_name
+                if search_name in sheet_name
             ][0]
         except:
             raise ValueError("Acronym given does not correspond to a valid policy.")
@@ -280,10 +282,12 @@ def _get_raw_dataframe_annex4(
         ).reset_index(drop=True)
     else:
         try:
+            # Handle special case for NCC sheet name
+            search_name = "3k NCC" if policy_name == "NCC" else policy_name
             sheet = [
                 sheet_name
                 for sheet_name in _get_excel_sheet_names(fileobject)
-                if policy_name in sheet_name
+                if search_name in sheet_name
             ][0]
         except:
             raise ValueError("Acronym given does not correspond to a valid policy.")

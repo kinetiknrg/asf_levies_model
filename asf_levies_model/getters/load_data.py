@@ -184,16 +184,38 @@ Functions for getting and processing Annex 4 data
 def download_annex_4(
     url: str = config.get("data_sources").get("ofgem_annex_4"),
     as_fileobject: bool = False,
+    force_download: bool = False,
 ) -> Optional[BytesIO]:
     """Retrieves annex4 xlsx file from Ofgem website and either saves to a file or returns a fileobject.
 
     Args:
         url: str, url of relevant Ofgem Annex 4 xlsx file. Defaults to entry in config.
         as_fileobject: bool (default: False), whether to save to disk or return BytesIO fileobject.
+        force_download: bool (default: False), whether to force fresh download even if cached file exists.
 
     Returns:
         Optionally, None or BytesIO fileobject.
     """
+    # Check if we should use cached file (only when as_fileobject=False)
+    if not as_fileobject:
+        try:
+            latest_cached = _find_latest_annex(DATA_ROOT, 4)
+            if latest_cached:
+                # Check config file modification time vs cached file date
+                config_path = Path(__file__).parent.parent / "config" / "base.yaml"
+                if config_path.exists():
+                    import os
+                    config_mtime = datetime.datetime.fromtimestamp(os.path.getmtime(config_path))
+                    cached_date = datetime.datetime.strptime(latest_cached, "%Y%m%d")
+                    
+                    if cached_date >= config_mtime and not force_download:
+                        print(f"Using cached Annex 4 from {latest_cached} (newer than config update)")
+                        return None  # Signal to use cached file
+                    else:
+                        print(f"Config updated {config_mtime.strftime('%Y-%m-%d')}, cached file {latest_cached} is stale, attempting fresh download")
+        except:
+            pass  # Continue with download attempt
+
     with Session() as session:
         try:
             response = session.get(url)
@@ -206,6 +228,16 @@ def download_annex_4(
             print("File retrieved successfully.")
         except RequestException as rex:
             print("Failed to download annex 4", rex)
+            # Try to use cached file as fallback
+            if not as_fileobject:
+                try:
+                    latest_cached = _find_latest_annex(DATA_ROOT, 4)
+                    if latest_cached:
+                        print(f"Using cached fallback: {latest_cached}")
+                        return None
+                except:
+                    pass
+            return None
 
 
 def _find_latest_annex(data_root: str, annex_to_find: int) -> str:

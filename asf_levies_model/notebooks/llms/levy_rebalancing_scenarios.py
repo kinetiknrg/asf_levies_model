@@ -94,11 +94,11 @@ list_levies_base = [
     levies.RO.from_dataframe(levy_data['RO'], denominator=supply_elec),
     levies.AAHEDC.from_dataframe(levy_data['AAHEDC'], denominator=supply_elec),
     levies.GGL.from_dataframe(levy_data['GGL'], denominator=customers_gas),
-    levies.WHD.from_dataframe(levy_data['WHD'], 
+    levies.WHD.from_dataframe(levy_data['WHD'],
                              customers_gas=customers_gas,
                              customers_elec=customers_elec),
     levies.ECO.from_dataframe(levy_data['ECO']),  # Using unified ECO
-    levies.FIT.from_dataframe(levy_data['FIT'], 
+    levies.FIT.from_dataframe(levy_data['FIT'],
                              scaling_factor=fit_scaling_factor),
 ]
 

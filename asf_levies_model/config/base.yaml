@@ -1,3 +1,4 @@
+# updated 02/09/2025 11:04
 # updated 28/08/2025 16:45
 # updated 21/08/2025 12:00
 
@@ -27,3 +28,17 @@ data_sources:
 data_downloads:
   annex: "PROJECT_DIR/inputs/data/raw/"
   archetypes: "PROJECT_DIR/asf_levies_model/config/"
+
+# Official Ofgem published rates for validation
+# Updated manually when new price cap periods are published
+# Source: https://www.ofgem.gov.uk/information-consumers/energy-advice-households/get-energy-price-cap-standing-charges-and-unit-rates-region
+validation_rates:
+  "2025-Q4":
+    period: "1 October to 31 December 2025"
+    payment_method: "Direct Debit, single rate: GB Average"
+    electricity_standing_pence_per_day: 53.68
+    electricity_unit_pence_per_kwh: 26.35
+    gas_standing_pence_per_day: 34.03  # Approximate - varies by region
+    gas_unit_pence_per_kwh: 6.29       # Approximate - varies by region
+    verified_date: "2025-09-02"
+    source_url: "https://www.ofgem.gov.uk/information-consumers/energy-advice-households/get-energy-price-cap-standing-charges-and-unit-rates-region"

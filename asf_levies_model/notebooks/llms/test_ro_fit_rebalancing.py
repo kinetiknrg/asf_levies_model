@@ -79,7 +79,7 @@ for levy in rebalanced:
     print(f"{levy.short_name}: elec_weight={levy.electricity_weight}, gas_weight={levy.gas_weight}")
     print(f"      elec_var_rate={levy.electricity_variable_rate:.2f}")
     print(f"      gas_var_rate={levy.gas_variable_rate:.2f}")
-    
+
     # Calculate new cost
     new_cost = levy.calculate_levy(2.7, 11.5, True, True)
     print(f"      New cost: £{new_cost:.2f}")

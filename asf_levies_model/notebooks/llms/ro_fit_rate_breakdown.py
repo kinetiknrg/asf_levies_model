@@ -150,7 +150,9 @@ print(f"                  {baseline_gas_unit / 10:.2f}p/kWh → {rebalanced_gas_
 
 print("\nWith VAT (+5% for published rate equivalent):")
 print(f"Electricity standing: {raw_elec_nil * 1.05 * 100 / 365:.2f}p/day (INC-VAT)")
+print(f"Electricity unit:     {baseline_elec_unit * 1.05 / 10:.2f}p/kWh → {rebalanced_elec_unit * 1.05 / 10:.2f}p/kWh (INC-VAT)")
 print(f"Gas standing:         {raw_gas_nil * 1.05 * 100 / 365:.2f}p/day (INC-VAT)")
+print(f"Gas unit:             {baseline_gas_unit * 1.05 / 10:.2f}p/kWh → {rebalanced_gas_unit * 1.05 / 10:.2f}p/kWh (INC-VAT)")
 
 # %%
 """
@@ -303,18 +305,238 @@ print(f"  Electricity: £{rebalanced_elec_policy:.2f}/MWh (RO+FIT removed: £{ba
 print(f"  Gas:         £{rebalanced_gas_policy:.2f}/MWh (RO+FIT added: £{rebalanced_gas_policy - baseline_gas_policy:.2f}/MWh)")
 
 # %%
-# Typical household impact
-print("\nTypical Household (2.7 MWh elec, 11.5 MWh gas)")
-print("-" * 50)
+"""
+Ofgem Consumer Archetype Analysis
+"""
 
-baseline_elec_bill = baseline_elec_tariff.calculate_total_consumption(2.7, vat=True)
-baseline_gas_bill = baseline_gas_tariff.calculate_total_consumption(11.5, vat=True)
-rebalanced_elec_bill = rebalanced_elec_tariff.calculate_total_consumption(2.7, vat=True)
-rebalanced_gas_bill = rebalanced_gas_tariff.calculate_total_consumption(11.5, vat=True)
+# %%
+# Load Ofgem archetype data
+from asf_levies_model.getters.load_data import ofgem_archetypes_data
+from asf_levies_model.consumers import Consumer
 
-print(f"Electricity bill: £{baseline_elec_bill:.2f}/year → £{rebalanced_elec_bill:.2f}/year  ({rebalanced_elec_bill - baseline_elec_bill:+.2f})")
-print(f"Gas bill:         £{baseline_gas_bill:.2f}/year → £{rebalanced_gas_bill:.2f}/year  ({rebalanced_gas_bill - baseline_gas_bill:+.2f})")
-print(f"Combined bill:    £{baseline_elec_bill + baseline_gas_bill:.2f}/year → £{rebalanced_elec_bill + rebalanced_gas_bill:.2f}/year  ({(rebalanced_elec_bill + rebalanced_gas_bill) - (baseline_elec_bill + baseline_gas_bill):+.2f})")
+ofgem_archetypes_df = ofgem_archetypes_data()
+
+# Filter for core archetypes only (rows 1-24, the main Ofgem archetypes)
+core_archetypes = ofgem_archetypes_df.iloc[1:25]  # Rows 1-24
+
+# Further filter for dual fuel (both gas and electricity > 0)
+dual_fuel_mask = (core_archetypes['GaskWh'] > 0) & (core_archetypes['ElectricitySingleRatekWh'] > 0)
+dual_fuel_core = core_archetypes[dual_fuel_mask]
+
+print(f"Core Dual Fuel Consumer Archetypes Analysis")
+print(f"Core archetypes (1-24): {len(core_archetypes)} | Core dual fuel: {len(dual_fuel_core)}")
+print("=" * 80)
+
+# %%
+# Create baseline and rebalanced consumers for dual fuel archetypes
+baseline_consumers = []
+rebalanced_consumers = []
+
+for row in dual_fuel_core.index:
+    # Baseline consumer
+    baseline_consumer = Consumer.consumer_from_dataframe(
+        df=ofgem_archetypes_df,
+        row=row,
+        name_col="AnnualConsumptionProfile",
+        archetype_col="AnnualConsumptionProfile",
+        net_annual_income_col="NetAnnualHouseholdIncome",
+        main_heating_fuel_col="ArchetypeHeatingFuel",
+        gas_consumption_col="GaskWh",
+        electricity_consumption_col="ElectricitySingleRatekWh",
+        gas_tariff=baseline_gas_tariff,
+        electricity_tariff=baseline_elec_tariff,
+        unit_converter=1_000,
+    )
+    baseline_consumers.append(baseline_consumer)
+
+    # Rebalanced consumer
+    rebalanced_consumer = Consumer.consumer_from_dataframe(
+        df=ofgem_archetypes_df,
+        row=row,
+        name_col="AnnualConsumptionProfile",
+        archetype_col="AnnualConsumptionProfile",
+        net_annual_income_col="NetAnnualHouseholdIncome",
+        main_heating_fuel_col="ArchetypeHeatingFuel",
+        gas_consumption_col="GaskWh",
+        electricity_consumption_col="ElectricitySingleRatekWh",
+        gas_tariff=rebalanced_gas_tariff,
+        electricity_tariff=rebalanced_elec_tariff,
+        unit_converter=1_000,
+    )
+    rebalanced_consumers.append(rebalanced_consumer)
+
+# %%
+print("ARCHETYPE IMPACT ANALYSIS (INC-VAT)")
+print("=" * 80)
+print(f"{'Archetype':<12} {'Gas':<8} {'Elec':<8} {'Baseline':<25} {'Rebalanced':<25} {'Change':<10}")
+print(f"{'':12} {'MWh':<8} {'MWh':<8} {'Elec|Gas|Total':<25} {'Elec|Gas|Total':<25} {'Total':<10}")
+print("-" * 80)
+
+for i, (baseline_consumer, rebalanced_consumer) in enumerate(zip(baseline_consumers, rebalanced_consumers)):
+    # Consumption
+    gas_mwh = baseline_consumer.gas_consumption
+    elec_mwh = baseline_consumer.electricity_consumption
+
+    # Baseline bills (INC-VAT)
+    baseline_elec = baseline_consumer.electricity_bill
+    baseline_gas = baseline_consumer.gas_bill
+    baseline_total = baseline_consumer.combined_fuel_bill
+
+    # Rebalanced bills (INC-VAT)
+    rebalanced_elec = rebalanced_consumer.electricity_bill
+    rebalanced_gas = rebalanced_consumer.gas_bill
+    rebalanced_total = rebalanced_consumer.combined_fuel_bill
+
+    # Changes
+    total_change = rebalanced_total - baseline_total
+
+    print(f"{baseline_consumer.name:<12} {gas_mwh:<8.1f} {elec_mwh:<8.1f} "
+          f"£{baseline_elec:<4.0f}|£{baseline_gas:<4.0f}|£{baseline_total:<4.0f} "
+          f"£{rebalanced_elec:<4.0f}|£{rebalanced_gas:<4.0f}|£{rebalanced_total:<4.0f} "
+          f"£{total_change:+6.0f}")
+
+# %%
+# Summary statistics for core dual fuel archetypes
+print("\nCORE DUAL FUEL ARCHETYPE SUMMARY")
+print("-" * 40)
+
+total_changes = [rebalanced.combined_fuel_bill - baseline.combined_fuel_bill
+                for baseline, rebalanced in zip(baseline_consumers, rebalanced_consumers)]
+
+print(f"Number of core dual fuel archetypes: {len(dual_fuel_core)}")
+print(f"Bill change range: £{min(total_changes):+.0f} to £{max(total_changes):+.0f}")
+print(f"Average bill change: £{sum(total_changes) / len(total_changes):+.0f}")
+
+winners = sum(1 for change in total_changes if change < 0)
+losers = sum(1 for change in total_changes if change > 0)
+print(f"Households better off: {winners}")
+print(f"Households worse off: {losers}")
+
+# %%
+"""
+Heat Pump Retrofit Analysis - The Purpose of Rebalancing
+"""
+
+# %%
+print("HEAT PUMP RETROFIT ANALYSIS")
+print("Objective: Assess how RO+FIT rebalancing affects gas boiler → heat pump economics")
+print("=" * 80)
+
+# Key parameters
+BOILER_EFFICIENCY = 0.8  # 80% efficient gas boiler
+HEAT_PUMP_SPF = 3.0      # Seasonal Performance Factor
+
+print(f"Assumptions:")
+print(f"  Gas boiler efficiency: {BOILER_EFFICIENCY*100:.0f}%")
+print(f"  Heat pump SPF: {HEAT_PUMP_SPF:.1f}")
+print(f"  Break-even: Electricity/Gas ratio must be < {HEAT_PUMP_SPF:.1f} for heat pump advantage")
+
+print(f"\nEnergy Flow Comparison:")
+print(f"  Gas Boiler:  Gas Input → {BOILER_EFFICIENCY*100:.0f}% efficiency → Heat Output")
+print(f"  Heat Pump:   Electricity Input × {HEAT_PUMP_SPF:.1f} SPF → Same Heat Output")
+print(f"  Heat Pump Elec = Gas Input × {BOILER_EFFICIENCY:.1f} ÷ {HEAT_PUMP_SPF:.1f} = Gas Input × {BOILER_EFFICIENCY/HEAT_PUMP_SPF:.2f}")
+
+# Calculate unit cost ratios
+baseline_elec_rate_inc_vat = baseline_elec_unit * 1.05 / 10  # p/kWh inc VAT
+baseline_gas_rate_inc_vat = baseline_gas_unit * 1.05 / 10    # p/kWh inc VAT
+rebalanced_elec_rate_inc_vat = rebalanced_elec_unit * 1.05 / 10
+rebalanced_gas_rate_inc_vat = rebalanced_gas_unit * 1.05 / 10
+
+baseline_ratio = baseline_elec_rate_inc_vat / baseline_gas_rate_inc_vat
+rebalanced_ratio = rebalanced_elec_rate_inc_vat / rebalanced_gas_rate_inc_vat
+
+print(f"\nUnit Cost Ratios (INC-VAT):")
+print(f"  Baseline:   {baseline_elec_rate_inc_vat:.2f}p/kWh ÷ {baseline_gas_rate_inc_vat:.2f}p/kWh = {baseline_ratio:.2f}")
+print(f"  Rebalanced: {rebalanced_elec_rate_inc_vat:.2f}p/kWh ÷ {rebalanced_gas_rate_inc_vat:.2f}p/kWh = {rebalanced_ratio:.2f}")
+print(f"  Improvement: {baseline_ratio:.2f} → {rebalanced_ratio:.2f} ({rebalanced_ratio - baseline_ratio:+.2f})")
+
+print(f"\nHeat Pump Competitiveness:")
+baseline_competitive = baseline_ratio < HEAT_PUMP_SPF
+rebalanced_competitive = rebalanced_ratio < HEAT_PUMP_SPF
+print(f"  Baseline: {'✅ Competitive' if baseline_competitive else '❌ Not competitive'} (ratio {baseline_ratio:.2f} vs SPF {HEAT_PUMP_SPF:.1f})")
+print(f"  Rebalanced: {'✅ Competitive' if rebalanced_competitive else '❌ Not competitive'} (ratio {rebalanced_ratio:.2f} vs SPF {HEAT_PUMP_SPF:.1f})")
+
+# %%
+print("\nCORE ARCHETYPE HEAT PUMP RETROFIT ANALYSIS")
+print("=" * 80)
+print(f"{'Archetype':<12} {'Gas':<8} {'Heat Pump':<10} {'Gas Boiler':<12} {'Heat Pump':<12} {'Annual':<10}")
+print(f"{'':12} {'MWh':<8} {'Elec MWh':<10} {'Cost':<12} {'Cost':<12} {'Saving':<10}")
+print("-" * 80)
+
+for baseline_consumer, rebalanced_consumer in zip(baseline_consumers, rebalanced_consumers):
+    # Gas consumption and heat pump electricity demand
+    gas_consumption = baseline_consumer.gas_consumption
+    hp_elec_demand = gas_consumption * BOILER_EFFICIENCY / HEAT_PUMP_SPF
+
+    # Baseline scenario costs
+    baseline_boiler_cost = baseline_consumer.gas_bill
+    baseline_hp_cost = baseline_elec_tariff.calculate_total_consumption(hp_elec_demand, vat=True)
+    baseline_saving = baseline_boiler_cost - baseline_hp_cost
+
+    # Rebalanced scenario costs
+    rebalanced_boiler_cost = rebalanced_consumer.gas_bill
+    rebalanced_hp_cost = rebalanced_elec_tariff.calculate_total_consumption(hp_elec_demand, vat=True)
+    rebalanced_saving = rebalanced_boiler_cost - rebalanced_hp_cost
+
+    print(f"{baseline_consumer.name:<12} {gas_consumption:<8.1f} {hp_elec_demand:<10.1f} "
+          f"£{baseline_boiler_cost:<11.0f} £{baseline_hp_cost:<11.0f} £{baseline_saving:+9.0f}")
+
+# %%
+print("\nREBALANCED SCENARIO HEAT PUMP ANALYSIS")
+print("-" * 80)
+print(f"{'Archetype':<12} {'Gas':<8} {'Heat Pump':<10} {'Gas Boiler':<12} {'Heat Pump':<12} {'Annual':<10}")
+print(f"{'':12} {'MWh':<8} {'Elec MWh':<10} {'Cost':<12} {'Cost':<12} {'Saving':<10}")
+print("-" * 80)
+
+hp_improvements = []
+for baseline_consumer, rebalanced_consumer in zip(baseline_consumers, rebalanced_consumers):
+    # Gas consumption and heat pump electricity demand
+    gas_consumption = baseline_consumer.gas_consumption
+    hp_elec_demand = gas_consumption * BOILER_EFFICIENCY / HEAT_PUMP_SPF
+
+    # Rebalanced scenario costs
+    rebalanced_boiler_cost = rebalanced_consumer.gas_bill
+    rebalanced_hp_cost = rebalanced_elec_tariff.calculate_total_consumption(hp_elec_demand, vat=True)
+    rebalanced_saving = rebalanced_boiler_cost - rebalanced_hp_cost
+
+    # Baseline comparison for improvement calculation
+    baseline_boiler_cost = baseline_consumer.gas_bill
+    baseline_hp_cost = baseline_elec_tariff.calculate_total_consumption(hp_elec_demand, vat=True)
+    baseline_saving = baseline_boiler_cost - baseline_hp_cost
+
+    improvement = rebalanced_saving - baseline_saving
+    hp_improvements.append(improvement)
+
+    print(f"{rebalanced_consumer.name:<12} {gas_consumption:<8.1f} {hp_elec_demand:<10.1f} "
+          f"£{rebalanced_boiler_cost:<11.0f} £{rebalanced_hp_cost:<11.0f} £{rebalanced_saving:+9.0f}")
+
+# %%
+print("\nHEAT PUMP ECONOMICS SUMMARY")
+print("-" * 35)
+
+baseline_winners = sum(1 for baseline_consumer in baseline_consumers
+                      if (baseline_consumer.gas_consumption * BOILER_EFFICIENCY / HEAT_PUMP_SPF * baseline_elec_rate_inc_vat / 10) <
+                         (baseline_consumer.gas_consumption * baseline_gas_rate_inc_vat / 10))
+
+rebalanced_winners = sum(1 for rebalanced_consumer in rebalanced_consumers
+                        if (rebalanced_consumer.gas_consumption * BOILER_EFFICIENCY / HEAT_PUMP_SPF * rebalanced_elec_rate_inc_vat / 10) <
+                           (rebalanced_consumer.gas_consumption * rebalanced_gas_rate_inc_vat / 10))
+
+print(f"Core dual fuel archetypes where heat pump is cheaper:")
+print(f"  Baseline scenario: {baseline_winners}/{len(baseline_consumers)}")
+print(f"  Rebalanced scenario: {rebalanced_winners}/{len(rebalanced_consumers)}")
+print(f"  Improvement: {rebalanced_winners - baseline_winners} additional archetypes")
+
+avg_improvement = sum(hp_improvements) / len(hp_improvements)
+print(f"Average heat pump economics improvement: £{avg_improvement:+.0f}/year")
+
+print(f"\nPolicy Impact on Heat Pump Adoption:")
+print(f"  Electricity/Gas ratio improvement: {baseline_ratio:.2f} → {rebalanced_ratio:.2f}")
+print(f"  Heat pump competitiveness threshold: {HEAT_PUMP_SPF:.1f}")
+if rebalanced_ratio < HEAT_PUMP_SPF:
+    print(f"  ✅ Heat pumps now competitive on running costs")
+else:
+    print(f"  ⚠️ Heat pumps still not competitive on running costs (ratio {rebalanced_ratio:.2f} > {HEAT_PUMP_SPF:.1f})")
 
 # %%
 # Revenue neutrality verification

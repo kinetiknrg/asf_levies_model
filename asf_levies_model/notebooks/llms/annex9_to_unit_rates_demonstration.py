@@ -22,16 +22,16 @@
 
 # %% [markdown]
 # ## The Key Insight
-# 
+#
 # Annex 9 provides:
 # - **Nil consumption**: Annual bill for zero consumption (standing charge only)
 # - **Typical consumption**: Annual bill for typical usage (2.7 MWh electricity, 11.5 MWh gas)
-# 
+#
 # The unit rate formula is:
 # ```
 # Unit Rate (£/MWh) = (Typical Annual Bill - Nil Annual Bill) / Typical Consumption
 # ```
-# 
+#
 # This isolates the variable component by removing the standing charge, then divides by consumption to get the per-unit rate.
 
 # %%
@@ -72,7 +72,7 @@ print(f"✅ Gas typical consumption data shape: {gas_other_typical.shape}")
 
 # %% [markdown]
 # ## Step 2: Examine Raw Data Structure
-# 
+#
 # Let's look at what Annex 9 actually contains:
 
 # %%
@@ -103,7 +103,7 @@ print(f"\nTotal Annual Bill (2.7 MWh): £{typical_data.sum():.2f}")
 
 # %% [markdown]
 # ## Step 3: The Unit Rate Calculation
-# 
+#
 # This is the critical transformation that converts annual bills to unit rates:
 
 # %%
@@ -185,13 +185,13 @@ print(f"              {gas_tariff.calculate_variable_consumption(1.0)/10:.2f}p p
 
 # %% [markdown]
 # ## Step 6: Validate Against Published Values
-# 
+#
 # From https://www.ofgem.gov.uk/information-consumers/energy-advice-households/get-energy-price-cap-standing-charges-and-unit-rates-region
-# 
+#
 # For the current period (October 2025 - December 2025), Other Payment Method, GB average:
 # - Electricity: Standing charge and unit rate
 # - Gas: Standing charge and unit rate
-# 
+#
 # Note: The model calculates GB averages, while Ofgem publishes regional values. The GB average should be close to the published values.
 
 # %%
@@ -219,7 +219,7 @@ print("typical_df = (typical_df - nil_df.fillna(0)) / typical_consumption")
 
 # %% [markdown]
 # ## Step 7: Regional Variations
-# 
+#
 # The values in Annex 9 appear to be GB averages. Regional variations shown on the Ofgem website
 # would require additional processing or regional adjustment factors.
 

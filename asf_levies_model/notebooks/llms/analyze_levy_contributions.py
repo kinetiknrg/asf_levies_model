@@ -32,7 +32,7 @@ for levy_type in levy_types:
     func_name = f'process_data_{levy_type}'
     func = getattr(data, func_name)
     df = func(annex_4)
-    
+
     levy_class = getattr(levies, levy_type)
     if levy_type in ['RO', 'ECO', 'WHD']:
         levy = levy_class.from_dataframe(df, denominator=supply_elec)
@@ -42,7 +42,7 @@ for levy_type in levy_types:
         levy.electricity_variable_rate = levy.electricity_variable_rate * (supply_elec / 100_000_000)
     else:
         levy = levy_class.from_dataframe(df)
-    
+
     list_levies_base.append(levy)
 
 # Calculate typical household consumption
@@ -63,13 +63,13 @@ for levy in list_levies_base:
     # Calculate individual levy cost
     levy_cost = levy.calculate_levy(elec_consumption, gas_consumption, has_elec, has_gas)
     total_cost += levy_cost
-    
+
     # Calculate electricity and gas components separately
     elec_cost = levy.calculate_levy(elec_consumption, 0, has_elec, False)
     gas_cost = levy.calculate_levy(0, gas_consumption, False, has_gas)
     elec_cost_total += elec_cost
     gas_cost_total += gas_cost
-    
+
     print(f"\n{levy.short_name}:")
     print(f"  Total cost: £{levy_cost:.2f}/year ({levy_cost/total_cost*100:.1f}% of total)")
     print(f"  Electricity portion: £{elec_cost:.2f}")

@@ -1,9 +1,11 @@
 {
 	"folders": [
 		{
+			"name": "asf_levies_model",
 			"uri": "vscode-remote://wsl+ubuntu/mnt/c/Users/user/.websites/nesta/asf_levies_model"
 		},
 		{
+			"name": "asf_levies_model_app",
 			"uri": "vscode-remote://wsl+ubuntu/mnt/c/Users/user/.websites/nesta/asf_levies_model_app"
 		}
 	],

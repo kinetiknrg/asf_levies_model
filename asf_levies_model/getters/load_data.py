@@ -211,17 +211,36 @@ def download_annex_4(
                 return BytesIO(response.content)
             print("File retrieved successfully.")
         except RequestException as rex:
+            # Check if this is a WSL/Windows dev environment network issue
+            is_wsl_network_issue = ("NameResolutionError" in str(rex) or
+                                  "Temporary failure in name resolution" in str(rex))
+
             # For production (as_fileobject=True): fail fast, no fallback
             if as_fileobject:
-                print(f"Download failed in production mode: {rex}")
+                if is_wsl_network_issue:
+                    print(f"🌐 Network access blocked (expected in WSL/Windows dev): {rex}")
+                    print(f"💡 This is normal for local development - using cached data")
+                else:
+                    print(f"Download failed in production mode: {rex}")
                 return None
 
             # For development (as_fileobject=False): warn and use cache
-            print(f"Download failed: {rex}")
+            if is_wsl_network_issue:
+                print(f"🌐 WSL/Windows network restriction detected: {rex}")
+                print(f"💡 This is expected in local development environments")
+            else:
+                print(f"Download failed: {rex}")
+
             try:
                 latest_cached = _find_latest_annex(DATA_ROOT, 4)
                 if latest_cached:
-                    print(f"⚠️  WARNING: Using stale cached file {latest_cached}")
+                    # Calculate file age and show full details
+                    cached_date = datetime.datetime.strptime(latest_cached, "%Y%m%d")
+                    age_days = (datetime.datetime.now() - cached_date).days
+                    full_filepath = f"{DATA_ROOT}{latest_cached}_ofgem_annex_4.xlsx"
+                    print(f"⚠️  FALLBACK: Using cached Annex 4 file")
+                    print(f"📁 File: {full_filepath}")
+                    print(f"📅 Downloaded: {cached_date.strftime('%d %B %Y')} ({age_days} days ago)")
                     print(f"⚠️  Policy analysis may be based on outdated data!")
                     return None
             except:
@@ -279,13 +298,18 @@ def _get_raw_dataframe_annex4(
     if not fileobject:
         date = datetime.datetime.now()
         latest_annex_4 = _find_latest_annex(DATA_ROOT, 4)
-        if (
-            day_diff := (
-                date - datetime.datetime.strptime(latest_annex_4, "%Y%m%d")
-            ).days
-        ) > 7:
-            warnings.warn(f"Using copy of Annex 4 downloaded {day_diff} days ago.")
+        cached_date = datetime.datetime.strptime(latest_annex_4, "%Y%m%d")
+        day_diff = (date - cached_date).days
         filepath = f"{DATA_ROOT}{latest_annex_4}_ofgem_annex_4.xlsx"
+
+        # Enhanced cache usage messaging (only show once to avoid repetition)
+        if not hasattr(_get_raw_dataframe_annex4, '_cache_msg_shown'):
+            print(f"📁 CACHE: Using cached Annex 4 file: {filepath}")
+            print(f"📅 Downloaded: {cached_date.strftime('%d %B %Y')} ({day_diff} days ago)")
+            print(f"🔧 Update asf_levies_model/config/base.yaml to use latest Ofgem published data")
+            if day_diff > 30:
+                warnings.warn(f"Using copy of Annex 4 downloaded {day_diff} days ago.")
+            _get_raw_dataframe_annex4._cache_msg_shown = True
         try:
             # Handle special case for NCC sheet name
             search_name = "3k NCC" if policy_name == "NCC" else policy_name
@@ -650,7 +674,42 @@ def download_annex_9(
                 return BytesIO(response.content)
             print("File retrieved successfully.")
         except RequestException as rex:
-            print("Failed to download annex 9", rex)
+            # Check if this is a WSL/Windows dev environment network issue
+            is_wsl_network_issue = ("NameResolutionError" in str(rex) or
+                                  "Temporary failure in name resolution" in str(rex))
+
+            # For production (as_fileobject=True): fail fast, no fallback
+            if as_fileobject:
+                if is_wsl_network_issue:
+                    print(f"🌐 Network access blocked (expected in WSL/Windows dev): {rex}")
+                    print(f"💡 This is normal for local development - using cached data")
+                else:
+                    print(f"Download failed in production mode: {rex}")
+                return None
+
+            # For development (as_fileobject=False): warn and use cache
+            if is_wsl_network_issue:
+                print(f"🌐 WSL/Windows network restriction detected: {rex}")
+                print(f"💡 This is expected in local development environments")
+            else:
+                print(f"Download failed: {rex}")
+
+            try:
+                latest_cached = _find_latest_annex(DATA_ROOT, 9)
+                if latest_cached:
+                    # Calculate file age and show full details
+                    cached_date = datetime.datetime.strptime(latest_cached, "%Y%m%d")
+                    age_days = (datetime.datetime.now() - cached_date).days
+                    full_filepath = f"{DATA_ROOT}{latest_cached}_ofgem_annex_9.xlsx"
+                    print(f"⚠️  FALLBACK: Using cached Annex 9 file")
+                    print(f"📁 File: {full_filepath}")
+                    print(f"📅 Downloaded: {cached_date.strftime('%d %B %Y')} ({age_days} days ago)")
+                    print(f"⚠️  Policy analysis may be based on outdated data!")
+                    return None
+            except:
+                pass
+            print("❌ No cached files available")
+            return None
 
 
 def _get_raw_dataframe_annex9(
@@ -663,12 +722,18 @@ def _get_raw_dataframe_annex9(
 
         # Use cached file
         latest_annex_9 = _find_latest_annex(DATA_ROOT, 9)
-        if (
-            day_diff := (
-                date - datetime.datetime.strptime(latest_annex_9, "%Y%m%d")
-            ).days
-        ) > 7:
-            warnings.warn(f"Using copy of Annex 9 downloaded {day_diff} days ago.")
+        cached_date = datetime.datetime.strptime(latest_annex_9, "%Y%m%d")
+        day_diff = (date - cached_date).days
+
+        # Enhanced cache usage messaging (only show once to avoid repetition)
+        if not hasattr(_get_raw_dataframe_annex9, '_cache_msg_shown'):
+            filepath = f"{DATA_ROOT}{latest_annex_9}_ofgem_annex_9.xlsx"
+            print(f"📁 CACHE: Using cached Annex 9 file: {filepath}")
+            print(f"📅 Downloaded: {cached_date.strftime('%d %B %Y')} ({day_diff} days ago)")
+            print(f"🔧 Update asf_levies_model/config/base.yaml to use latest Ofgem published data")
+            if day_diff > 7:
+                warnings.warn(f"Using copy of Annex 9 downloaded {day_diff} days ago.")
+            _get_raw_dataframe_annex9._cache_msg_shown = True
         filepath = f"{DATA_ROOT}{latest_annex_9}_ofgem_annex_9.xlsx"
         try:
             sheet = [

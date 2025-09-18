@@ -6,4 +6,4 @@ requests
 PyYAML
 pandera
 python-dateutil
-python-calamine
+python-calamine==0.4.0

@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "asf_levies_model"
+version = "0.1.0"
+description = "Analytical model of domestic energy bills and levies."
+authors = [
+    {name = "Your Name", email = "your.email@example.com"},
+    {name = "Nesta", email = ""}  # Original authors
+]
+license = {text = "MIT"}
+dependencies = [
+    "pandas",
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "requests",
+    "PyYAML",
+    "pandera",
+    "python-dateutil",
+    "python-calamine==0.4.0",
+]
+
+[tool.setuptools.packages.find]
+exclude = ["docs"]
+
+[tool.setuptools.package-data]
+"*" = ["base.yaml", "master_archetypes_data.pkl"]
